@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MPDTE College Predictor</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background-color: #f7f9fc;
+    }
+    h1 {
+      text-align: center;
+      color: #004080;
+    }
+    form {
+      max-width: 600px;
+      margin: auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    input, select, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 30px;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid #ccc;
+      text-align: left;
+    }
+    th {
+      background: #e8f1ff;
+    }
+  </style>
+</head>
+<body>
+  <h1>MPDTE College Predictor</h1>
+  <form id="predictor-form">
+    <input type="text" id="username" placeholder="Enter your Name" required />
+    <input type="number" id="rank" placeholder="Enter your Rank" required />
+
+    <select id="category" required>
+      <option value="">Select Category</option>
+      <option value="GEN">GEN</option>
+      <option value="OBC">OBC</option>
+      <option value="SC">SC</option>
+      <option value="ST">ST</option>
+      <option value="EWS">EWS</option>
+    </select>
+
+    <button type="submit">Predict Colleges</button>
+  </form>
+
+  <div id="results"></div>
+
+  <script>
+    let jsonData = [];
+
+    async function fetchJsonData() {
+      const res = await fetch("Merged_MPDTE_Counselling_Data.json");
+      return await res.json();
+    }
+
+    document.getElementById('predictor-form').addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      const name = document.getElementById('username').value.trim();
+      const rank = parseInt(document.getElementById('rank').value);
+      const category = document.getElementById('category').value;
+
+      jsonData = await fetchJsonData();
+
+      const filtered = jsonData.filter(row => {
+        const closingRank = parseInt(row['Closing Rank']);
+        return !isNaN(closingRank) &&
+               rank <= closingRank &&
+               row['Category'] === category;
+      });
+
+      const resultDiv = document.getElementById('results');
+
+      if (filtered.length === 0) {
+        resultDiv.innerHTML = '<p>No colleges found for the given input.</p>';
+        return;
+      }
+
+      let html = `<h2>Predicted Colleges for ${name}</h2><table><thead><tr>
+        <th>Institute Name</th>
+        <th>Branch</th>
+        <th>Total Fees</th>
+        <th>Hostel Fees</th>
+        <th>Avg Salary</th>
+        <th>Highest Salary</th>
+        <th>Opening Rank</th>
+        <th>Closing Rank</th>
+        </tr></thead><tbody>`;
+
+      filtered.forEach(row => {
+        html += `<tr>
+          <td>${row['Institute Name']}</td>
+          <td>${row['Branch']}</td>
+          <td>${row['Total Fees (₹)'] || '-'}</td>
+          <td>${row['Hostel Fees (₹)'] || '-'}</td>
+          <td>${row['Avg Salary (LPA)'] || '-'}</td>
+          <td>${row['Highest Salary (LPA)'] || '-'}</td>
+          <td>${row['Opening Rank']}</td>
+          <td>${row['Closing Rank']}</td>
+        </tr>`;
+      });
+
+      html += '</tbody></table>';
+      resultDiv.innerHTML = html;
+    });
+  </script>
+</body>
+</html>
